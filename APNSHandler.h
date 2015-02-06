@@ -55,7 +55,7 @@
  */
 @property (nonatomic) BOOL canDisplayNotification;
 /**
- *  Return nil if canRegisterRemoteNotification is NO or if no internet connection or not done yet
+ *  Return the last deviceToken, can be new or cached since the last app launch
  */
 @property (nonatomic, strong) NSString *deviceToken;
 /**

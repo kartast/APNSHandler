@@ -15,7 +15,7 @@
 @end
 
 @implementation APNSHandler
-
+@synthesize deviceToken = _deviceToken;
 + (instancetype)sharedInstance
 {
   static APNSHandler * _sharedInstance;
@@ -58,12 +58,17 @@
 }
 - (NSString *)deviceToken
 {
-  // have to check because the previous cached token may be already invalid
-  if ([UIApplication sharedApplication].isRegisteredForRemoteNotifications)
+  if (!_deviceToken)
   {
-    return _deviceToken;
+    _deviceToken = [[NSUserDefaults standardUserDefaults] objectForKey:@"APNSHandler_deviceToken"];
   }
-  return nil;
+  return _deviceToken;
+}
+- (void)setDeviceToken:(NSString *)deviceToken
+{
+  _deviceToken = deviceToken;
+  [[NSUserDefaults standardUserDefaults] setObject:_deviceToken forKey:@"APNSHandler_deviceToken"];
+  [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 #pragma mark - Methods
@@ -124,10 +129,10 @@
     {
       [self.delegate APNSHandlerNotificationTypesDidChange:self.notificationTypes canDisplayNotification:self.canDisplayNotification];
     }
-    if (self.canDisplayNotification && self.shouldAutoRegisterRemoteNotification)
-    {
-      [self registerForRemoteNotifications];
-    }
+  }
+  if (self.canDisplayNotification && self.shouldAutoRegisterRemoteNotification && (![UIApplication sharedApplication].isRegisteredForRemoteNotifications || self.deviceToken.length == 0))
+  {
+    [self registerForRemoteNotifications];
   }
 }
 
