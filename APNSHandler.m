@@ -82,19 +82,26 @@
 {
   [[UIApplication sharedApplication] registerForRemoteNotifications];
 }
+- (void)registerForRemoteNotificationsIfNecessary
+{
+  if (self.canDisplayNotification && self.shouldAutoRegisterRemoteNotification && (![UIApplication sharedApplication].isRegisteredForRemoteNotifications || self.deviceToken.length == 0))
+  {
+    [self registerForRemoteNotifications];
+  }
+}
 
 #pragma mark - UIApplicationDelegate Handler
 
 - (void)handleApplication:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings
 {
-  if (notificationSettings.types != UIUserNotificationTypeNone && self.shouldAutoRegisterRemoteNotification)
+  if (self.canDisplayNotification && self.shouldAutoRegisterRemoteNotification)
   {
     [self registerForRemoteNotifications];
   }
   if (self.delegate && [self.delegate respondsToSelector:@selector(APNSHandlerDidAskForNotificationSettingsWithPrompt:canDisplayNotification:)])
   {
     [self.delegate APNSHandlerDidAskForNotificationSettingsWithPrompt:(_startRegisterTimestamp == nil || (-[_startRegisterTimestamp timeIntervalSinceNow] > 0.26))
-                                               canDisplayNotification:(notificationSettings.types != UIUserNotificationTypeNone)];
+                                               canDisplayNotification:(self.canDisplayNotification)];
   }
   _startRegisterTimestamp = nil;
 }
@@ -130,10 +137,7 @@
       [self.delegate APNSHandlerNotificationTypesDidChange:self.notificationTypes canDisplayNotification:self.canDisplayNotification];
     }
   }
-  if (self.canDisplayNotification && self.shouldAutoRegisterRemoteNotification && (![UIApplication sharedApplication].isRegisteredForRemoteNotifications || self.deviceToken.length == 0))
-  {
-    [self registerForRemoteNotifications];
-  }
+  [self registerForRemoteNotificationsIfNecessary];
 }
 
 @end

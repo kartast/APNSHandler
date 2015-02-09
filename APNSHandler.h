@@ -85,6 +85,10 @@
  */
 - (void)registerForRemoteNotifications;
 /**
+ *  Call to UIApplication registerForRemoteNotifications if did not register before
+ */
+- (void)registerForRemoteNotificationsIfNecessary;
+/**
  *  Handler. Please put in didRegisterUserNotificationSettings
  *
  *  @param application          UIApplication
