@@ -1,6 +1,6 @@
 APNSHandler
 ===========
-## Apple Push Notification Handler for iOS 8 - a wrapper class that helps dealing with iOS Remote or Local Notification Settings
+#### Apple Push Notification Handler for iOS 8 - a wrapper class that helps dealing with iOS Remote or Local Notification Settings
 
 #### How to use
 ```objective-c
