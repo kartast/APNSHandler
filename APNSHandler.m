@@ -9,6 +9,14 @@
 
 @interface APNSHandler ()
 {
+  struct {
+    int didAsk;
+    int settingsUpdated;
+    int didRegisterForRemote;
+    int didFailToRegisterForRemote;
+  } _delegateFlags;
+  
+  // measure the duration when start registering for user notification settings. If > 0.26 means the iOS prompt was shown.
   NSDate *_startRegisterTimestamp;
 }
 
@@ -43,7 +51,6 @@
 }
 - (void)setup
 {
-  self.notificationTypes = [UIApplication sharedApplication].currentUserNotificationSettings.types;
   if (self.canDisplayNotification && self.shouldAutoRegisterRemoteNotification)
   {
     [self registerForRemoteNotifications]; // silently, since we already asked!
@@ -51,7 +58,14 @@
 }
 
 #pragma mark - Properties
-
+- (void)setDelegate:(id<APNSHandlerDelegate>)delegate
+{
+  _delegate = delegate;
+  _delegateFlags.didAsk = _delegate && [(id)_delegate respondsToSelector:@selector(APNSHandler:didAskForNotificationSettingsWithPrompt:canDisplayNotification:)];
+  _delegateFlags.didRegisterForRemote = _delegate && [(id)_delegate respondsToSelector:@selector(APNSHandler:didRegisterForRemoteNotificationsWithDeviceToken:)];
+  _delegateFlags.didFailToRegisterForRemote = _delegate && [(id)_delegate respondsToSelector:@selector(APNSHandler:didFailToRegisterForRemoteNotificationsWithError:)];
+  _delegateFlags.settingsUpdated = _delegate && [(id)_delegate respondsToSelector:@selector(APNSHandler:notificationSettingsUpdated:canDisplayNotification:)];
+}
 - (BOOL)canDisplayNotification
 {
   return ([UIApplication sharedApplication].currentUserNotificationSettings.types != UIUserNotificationTypeNone);
@@ -98,10 +112,13 @@
   {
     [self registerForRemoteNotifications];
   }
-  if (self.delegate && [self.delegate respondsToSelector:@selector(APNSHandlerDidAskForNotificationSettingsWithPrompt:canDisplayNotification:)])
+  if (_delegateFlags.didAsk)
   {
-    [self.delegate APNSHandlerDidAskForNotificationSettingsWithPrompt:(_startRegisterTimestamp == nil || (-[_startRegisterTimestamp timeIntervalSinceNow] > 0.26))
-                                               canDisplayNotification:(self.canDisplayNotification)];
+    [_delegate APNSHandler:self didAskForNotificationSettingsWithPrompt:(
+                                                                         _startRegisterTimestamp == nil
+                                                                         || (-[_startRegisterTimestamp timeIntervalSinceNow] > 0.26)
+                                                                         )
+    canDisplayNotification:self.canDisplayNotification];
   }
   _startRegisterTimestamp = nil;
 }
@@ -112,16 +129,16 @@
   token = [token stringByReplacingOccurrencesOfString:@">" withString:@""];
   token = [token stringByReplacingOccurrencesOfString:@" " withString:@""];
   self.deviceToken = token;
-  if (self.delegate && [self.delegate respondsToSelector:@selector(APNSHandlerDidRegisterForRemoteNotificationsWithDeviceToken:)])
+  if (_delegateFlags.didRegisterForRemote)
   {
-    [self.delegate APNSHandlerDidRegisterForRemoteNotificationsWithDeviceToken:self.deviceToken];
+    [_delegate APNSHandler:self didRegisterForRemoteNotificationsWithDeviceToken:self.deviceToken];
   }
 }
 - (void)handleApplication:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
 {
-  if (self.delegate && [self.delegate respondsToSelector:@selector(APNSHandlerDidFailToRegisterForRemoteNotificationsWithError:)])
+  if (_delegateFlags.didFailToRegisterForRemote)
   {
-    [self.delegate APNSHandlerDidFailToRegisterForRemoteNotificationsWithError:error];
+    [_delegate APNSHandler:self didFailToRegisterForRemoteNotificationsWithError:error];
   }
 }
 
@@ -129,13 +146,9 @@
 
 - (void)applicationDidBecomeActive:(NSNotification *)notification
 {
-  if (self.notificationTypes != [UIApplication sharedApplication].currentUserNotificationSettings.types)
+  if (_delegateFlags.settingsUpdated)
   {
-    self.notificationTypes = [UIApplication sharedApplication].currentUserNotificationSettings.types;
-    if (self.delegate && [self.delegate respondsToSelector:@selector(APNSHandlerNotificationTypesDidChange:canDisplayNotification:)])
-    {
-      [self.delegate APNSHandlerNotificationTypesDidChange:self.notificationTypes canDisplayNotification:self.canDisplayNotification];
-    }
+    [_delegate APNSHandler:self notificationSettingsUpdated:[UIApplication sharedApplication].currentUserNotificationSettings canDisplayNotification:self.canDisplayNotification];
   }
   [self registerForRemoteNotificationsIfNecessary];
 }
