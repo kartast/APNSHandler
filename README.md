@@ -34,29 +34,27 @@ APNSHandler
  *  @param didPrompt   If YES: user never see the prompt from system before. If NO: user used to make a decision, so no UI was displayed. Good time to display a custom popup to guide user to enable in SETTINGS > NOTIFICATIONS > Your_App_name > ENABLED > TURN ON!
  *  @param types   UIUserNotificationType
  */
-- (void)APNSHandlerDidAskForNotificationSettingsWithPrompt:(BOOL)didPrompt
-                                    canDisplayNotification:(BOOL)canDisplayNotification;
+- (void)APNSHandler:(APNSHandler*)handler didAskForNotificationSettingsWithPrompt:(BOOL)didPrompt canDisplayNotification:(BOOL)canDisplayNotification;
 /**
  *  Received device token from Apple
  *
  *  @param deviceToken NSString
  */
-- (void)APNSHandlerDidRegisterForRemoteNotificationsWithDeviceToken:(NSString*)deviceToken;
+- (void)APNSHandler:(APNSHandler*)handler didRegisterForRemoteNotificationsWithDeviceToken:(NSString*)deviceToken;
 
 /**
  *  Probably changed manually by user. Called when app becomes active if there's any change.
  *
  *  @param notificationTypes UIUserNotificationType
  */
-- (void)APNSHandlerNotificationTypesDidChange:(UIUserNotificationType)notificationTypes
-                       canDisplayNotification:(BOOL)canDisplayNotification;
+- (void)APNSHandler:(APNSHandler*)handler notificationSettingsUpdated:(UIUserNotificationSettings*)notificationSettings canDisplayNotification:(BOOL)canDisplayNotification;
 
 /**
  *  Fail to register remote notification because of internet connectivity or denial
  *
  *  @param error NSError
  */
-- (void)APNSHandlerDidFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
+- (void)APNSHandler:(APNSHandler*)handler didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
 @end
 
 /**
@@ -74,10 +72,6 @@ APNSHandler
  *  Return the last deviceToken, can be new or cached since the last app launch
  */
 @property (nonatomic, strong) NSString *deviceToken;
-/**
- *  UIUserNotificationType. If None, please use other flags to display proper behaviour
- */
-@property UIUserNotificationType notificationTypes;
 /**
  *  Default: YES. If your app doesn't have Push Notification or you want to control when to call, set this flag to NO.
  */
@@ -125,5 +119,5 @@ APNSHandler
  *  @param error       NSError
  */
 - (void)handleApplication:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error;
-
+@end
 ```
